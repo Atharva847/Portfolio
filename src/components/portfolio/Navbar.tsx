@@ -40,6 +40,7 @@ const Navbar = () => {
     e.preventDefault();
     const id = href.replace("#", "");
     if (!id) {
+      setIsMobileMenuOpen(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
@@ -56,6 +57,19 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [isMobileMenuOpen]);
 
   return (
     <nav
@@ -92,9 +106,32 @@ const Navbar = () => {
         <button
           className="md:hidden p-2"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label={isMobileMenuOpen ? "Close mobile menu" : "Open mobile menu"}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-nav-menu"
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
+      </div>
+
+      <div
+        id="mobile-nav-menu"
+        className={`md:hidden overflow-hidden border-t border-border bg-background/95 backdrop-blur-lg transition-all duration-300 ease-out ${
+          isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-6 py-3 flex flex-col gap-1">
+          {navLinks.map((link) => (
+            <a
+              key={link.name}
+              href={link.href}
+              onClick={(e) => onNavClick(e, link.href)}
+              className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              {link.name}
+            </a>
+          ))}
+        </div>
       </div>
     </nav>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /* ── Data ─────────────────────────────────────────────────────────── */
 const ACCENTS: Record<string, { bg: string; text: string; glow: string; grad: string; border: string }> = {
@@ -176,7 +177,8 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
           <div style={{ position:"absolute",inset:0,background:a.grad,opacity:0.15 }} />
           <div style={{ position:"absolute",inset:0,background:"linear-gradient(to top,#0f0f0f,rgba(15,15,15,0.5),transparent)" }} />
           <button onClick={onClose} style={{ position:"absolute",top:"1rem",right:"1rem",padding:"0.5rem",borderRadius:"9999px",
-            background:"rgba(10,10,10,0.8)",border:"1px solid #262626",color:"#fafafa",cursor:"pointer",display:"flex" }}>
+            background:"rgba(10,10,10,0.96)",border:"1px solid rgba(255,255,255,0.24)",color:"#fff",cursor:"pointer",display:"flex",
+            zIndex:30,boxShadow:"0 10px 25px rgba(0,0,0,0.45)" }}>
             <IconX />
           </button>
           <div style={{ position:"absolute",bottom:"1rem",left:"1.5rem",display:"flex",alignItems:"center",gap:"0.75rem" }}>
@@ -293,9 +295,17 @@ const Projects = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [modalProject, setModalProject] = useState<Project | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [touchedCardIndex, setTouchedCardIndex] = useState<number | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const tickingRef = useRef(false);
   const { ref: revealRef, isVisible } = useScrollAnimation();
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (touchedCardIndex === null) return;
+    const timer = window.setTimeout(() => setTouchedCardIndex(null), 260);
+    return () => window.clearTimeout(timer);
+  }, [touchedCardIndex]);
 
   const goTo = useCallback((idx: number) => {
     const section = sectionRef.current;
@@ -319,7 +329,10 @@ const Projects = () => {
         const scrolled = Math.max(0, -rect.top);
         const progress = Math.max(0, Math.min(1, scrolled / scrollable));
         
-        const nextIndex = Math.min(projects.length - 1, Math.floor(progress * projects.length));
+        const nextIndex = Math.min(
+          projects.length - 1,
+          Math.max(0, Math.round(progress * (projects.length - 1)))
+        );
         setActiveIndex(prev => (prev === nextIndex ? prev : nextIndex));
         
         tickingRef.current = false;
@@ -336,7 +349,11 @@ const Projects = () => {
       <section
         id="projects"
         ref={sectionRef}
-        style={{ position:"relative", minHeight:"250vh", padding:"0 1rem" }}
+        style={{
+          position: "relative",
+          minHeight: isMobile ? "320vh" : "250vh",
+          padding: "0 1rem",
+        }}
       >
         <div ref={revealRef} style={{ position:"sticky", top:0, height:"100vh", display:"flex", flexDirection:"column",
                       alignItems:"center", justifyContent:"center", overflow:"hidden", gap:"1.5rem", paddingTop:"3rem" }}>
@@ -361,36 +378,50 @@ const Projects = () => {
             {projects.map((p, i) => {
               const a = ACCENTS[p.accent];
               const offset = i - activeIndex;
+              const shouldRender = !isMobile || Math.abs(offset) <= 1;
               const isPast = offset < 0;
               const yOff = isPast ? -105 : offset * 10;
               const zOff = isPast ? -140 : -Math.min(offset * 80, 220);
               const scale = isPast ? 0.94 : 1 - Math.min(offset * 0.06, 0.16);
               const isActive = i === activeIndex;
               const opacity = isActive ? 1 : 0;
-              const isHovered = isActive && hoveredIndex === i;
-              const blur = isActive ? 0 : 10;
+              const isHovered = !isMobile && isActive && hoveredIndex === i;
+              const isActiveTouched = isMobile && isActive && touchedCardIndex === i;
+              const isEngaged = isHovered || isActiveTouched;
+              const blur = isActive ? 0 : isMobile ? 0 : 10;
+              const mobileYOffset = isMobile ? (isPast ? -22 : offset * 6) : yOff;
+              const mobileScale = isMobile ? (isPast ? 0.98 : 1 - Math.min(offset * 0.02, 0.06)) : scale;
+              const mobileZOffset = isMobile ? (isPast ? -36 : -Math.min(offset * 20, 60)) : zOff;
+              const transition = isMobile
+                ? "transform 500ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease-out"
+                : "transform 1000ms cubic-bezier(0.22, 1, 0.36, 1), opacity 480ms ease-out, filter 480ms ease-out";
+
+              if (!shouldRender) return null;
 
               return (
                 <div
                   key={p.id}
                   onMouseEnter={() => setHoveredIndex(i)}
                   onMouseLeave={() => setHoveredIndex(null)}
+                  onTouchStart={() => {
+                    if (isActive) setTouchedCardIndex(i);
+                  }}
                   style={{
                     position:"absolute", inset:0, margin:"0 0.5rem",
-                    transform:`translateY(${yOff}%) translateZ(${zOff}px) scale(${scale})`,
+                    transform:`translateY(${mobileYOffset}%) translateZ(${mobileZOffset}px) scale(${mobileScale})`,
                     opacity,
                     filter:`blur(${blur}px)`,
                     zIndex: projects.length - Math.abs(offset),
                     pointerEvents: isActive ? "auto" : "none",
                     willChange: "transform, opacity, filter",
-                    transition:"transform 1000ms cubic-bezier(0.22, 1, 0.36, 1), opacity 480ms ease-out, filter 480ms ease-out",
+                    transition,
                   }}
                 >
                   <div style={{
                     position:"relative", height:"100%", borderRadius:"1.5rem", overflow:"hidden",
                     border:"2px solid rgba(255,255,255,0.06)", background:"rgba(15,15,15,0.95)",
-                    backdropFilter:"blur(24px)",
-                    boxShadow: isActive ? `0 25px 50px -12px ${isHovered ? a.glow.replace("0.35", "0.55") : a.glow}` : "none",
+                    backdropFilter: isMobile ? "none" : "blur(24px)",
+                    boxShadow: isActive ? `0 25px 50px -12px ${isEngaged ? a.glow.replace("0.35", "0.55") : a.glow}` : "none",
                     transition:"box-shadow 0.5s",
                   }}>
                     {/* Background image */}
@@ -402,8 +433,10 @@ const Projects = () => {
                         decoding="async"
                         style={{
                           width:"100%",height:"100%",objectFit:"cover",
-                          transform: isHovered ? "scale(1.1)" : "scale(1)",
-                          transition:"transform 0.85s cubic-bezier(0.22, 1, 0.36, 1)"
+                          transform: isEngaged ? "scale(1.1)" : isMobile && isActive ? "scale(1.04)" : "scale(1)",
+                          transition: isMobile
+                            ? "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)"
+                            : "transform 0.85s cubic-bezier(0.22, 1, 0.36, 1)"
                         }}
                       />
                     </div>
@@ -412,12 +445,12 @@ const Projects = () => {
                     <div style={{ position:"absolute",inset:0,background:"linear-gradient(to top,#0a0a0a,rgba(10,10,10,0.5),transparent)" }} />
                     <div style={{
                       position:"absolute",inset:0,background:a.grad,mixBlendMode:"overlay",
-                      opacity: isHovered ? 0.2 : 0.08, transition:"opacity 0.35s ease"
+                      opacity: isEngaged ? 0.2 : isMobile && isActive ? 0.14 : 0.08, transition:"opacity 0.35s ease"
                     }} />
                     {/* Glow */}
                     <div style={{
                       position:"absolute",inset:-4,borderRadius:"1.5rem",filter:"blur(24px)",
-                      background:a.grad,opacity: isHovered ? 0.25 : 0,transition:"opacity 0.45s ease"
+                      background:a.grad,opacity: isEngaged ? 0.25 : isMobile && isActive ? 0.14 : 0,transition:"opacity 0.45s ease"
                     }} />
 
                     {/* Content */}
@@ -520,6 +553,7 @@ const Projects = () => {
                           borderRadius:"9999px",border:"1px solid rgba(255,255,255,0.06)" }}>
               {projects.map((_, i) => (
                 <button key={i} onClick={() => goTo(i)}
+                  onTouchStart={() => setTouchedCardIndex(i)}
                   style={{ borderRadius:"9999px",border:"none",cursor:"pointer",transition:"all 0.3s",
                     width: i === activeIndex ? 32 : 12, height:12, padding:0,
                     background: i === activeIndex ? "hsl(var(--primary))" : "rgba(153,153,153,0.4)",
