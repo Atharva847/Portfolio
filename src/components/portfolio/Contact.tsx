@@ -37,17 +37,28 @@ const Contact = () => {
             className={`mb-12 ${isVisible ? "animate-in-view" : "opacity-0"}`}
             style={{ animationDelay: "0.3s" }}
           >
-            <a href="mailto:student@email.com">
-              <Button
-                size="lg"
-                className="group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-lg animate-pulse-glow"
+            <Button
+              size="lg"
+              asChild
+              className="group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-lg animate-pulse-glow"
+            >
+              <a
+                href="https://www.linkedin.com/in/atharva-k-8249a81b4/"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   Say Hello
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <a
+                  href="https://www.linkedin.com/in/atharva-k-8249a81b4/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                ></a>
                 </span>
-              </Button>
-            </a>
+              </a>
+            </Button>
+
           </div>
 
           {/* Contact Info */}
@@ -74,7 +85,7 @@ const Contact = () => {
             style={{ animationDelay: "0.5s" }}
           >
             <a
-              href="https://github.com"
+              href="https://github.com/atharva847/"
               target="_blank"
               rel="noopener noreferrer"
               className="p-4 rounded-full border border-border bg-card hover:bg-secondary hover:border-primary/50 transition-all group"
@@ -82,7 +93,7 @@ const Contact = () => {
               <Github className="w-6 h-6 group-hover:scale-110 transition-transform" />
             </a>
             <a
-              href="https://linkedin.com"
+              href="https://www.linkedin.com/in/atharva-k-8249a81b4/"
               target="_blank"
               rel="noopener noreferrer"
               className="p-4 rounded-full border border-border bg-card hover:bg-secondary hover:border-primary/50 transition-all group"
