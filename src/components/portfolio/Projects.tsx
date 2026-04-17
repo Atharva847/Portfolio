@@ -302,10 +302,20 @@ const Projects = () => {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    if (touchedCardIndex === null) return;
-    const timer = window.setTimeout(() => setTouchedCardIndex(null), 260);
-    return () => window.clearTimeout(timer);
-  }, [touchedCardIndex]);
+    if (!isMobile) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      const isInsideActiveCard = !!target.closest('[data-project-card-active="true"]');
+      if (!isInsideActiveCard) {
+        setTouchedCardIndex(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [isMobile]);
 
   const goTo = useCallback((idx: number) => {
     const section = sectionRef.current;
@@ -423,7 +433,9 @@ const Projects = () => {
                     backdropFilter: isMobile ? "none" : "blur(24px)",
                     boxShadow: isActive ? `0 25px 50px -12px ${isEngaged ? a.glow.replace("0.35", "0.55") : a.glow}` : "none",
                     transition:"box-shadow 0.5s",
-                  }}>
+                  }}
+                  data-project-card-active={isActive ? "true" : "false"}
+                  >
                     {/* Background image */}
                     <div style={{ position:"absolute",inset:0 }}>
                       <img

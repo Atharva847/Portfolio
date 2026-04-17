@@ -86,7 +86,7 @@ const Hero = () => {
             asChild
             className="w-full sm:w-auto rounded-full px-6 sm:px-8 border-border hover:bg-secondary hover:text-white transition-colors"
           >
-            <a href="/cv-viewer.html" target="_blank" rel="noopener noreferrer">
+            <a href="/Atharva.pdf" target="_blank" rel="noopener noreferrer">
               Download CV
             </a>
           </Button>
